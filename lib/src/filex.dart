@@ -68,6 +68,14 @@ class _FilexState extends State<Filex> {
                     child: compact != null && compact!
                         ? _buildCompactVerticalListItem(context, item)
                         : _buildVerticalListItem(context, item),
+                    endActionPane: ActionPane(
+                      motion: DrawerMotion(),
+                      children: _getSlideIconActions(context, item),
+                    ),
+                    startActionPane: ActionPane(
+                      motion: DrawerMotion(),
+                      children: _getSlideIconActions(context, item),
+                    ),
                   );
                 } else {
                   if (compact != null && compact!) {
@@ -88,10 +96,12 @@ class _FilexState extends State<Filex> {
           }
         } else {
           return Center(
-              child: Padding(
-                  padding: EdgeInsets.only(
-                      top: MediaQuery.of(context).size.height / 0.8),
-                  child: const CircularProgressIndicator()));
+            child: Padding(
+              padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).size.height / 0.8),
+              child: const CircularProgressIndicator(),
+            ),
+          );
         }
       },
     );
