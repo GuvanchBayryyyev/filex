@@ -19,10 +19,10 @@ typedef void FilexSlidableActionBuilder(
 class FilexSlidableAction {
   /// Default constructor
   FilexSlidableAction(
-      {@required this.color,
-      @required this.iconData,
-      @required this.name,
-      @required this.onTap});
+      {required this.color,
+      required this.iconData,
+      required this.name,
+      required this.onTap});
 
   final Color color;
   final IconData iconData;

@@ -11,7 +11,7 @@ import "models/filesystem.dart";
 /// The main controller
 class FilexController {
   /// Provide a path
-  FilexController({@required this.path}) {
+  FilexController({required this.path}) {
     _bloc = _FilexBloc(path: path, itemController: _itemStream);
     directory = Directory(path);
     assert(
@@ -19,12 +19,12 @@ class FilexController {
   }
 
   /// Current directory
-  Directory directory;
+  late Directory directory;
 
   /// The current path to use
   final String path;
 
-  _FilexBloc _bloc;
+  late _FilexBloc _bloc;
   final _itemStream = rx.ReplaySubject<List<DirectoryItem>>();
 
   /// Setter for show only dirs setting
@@ -60,13 +60,13 @@ class FilexController {
         return AlertDialog(
             title: const Text("Create a directory"),
             actions: <Widget>[
-              FlatButton(
+              ElevatedButton(
                 child: const Text("Cancel"),
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
               ),
-              FlatButton(
+              ElevatedButton(
                 child: const Text("Create"),
                 onPressed: () {
                   createDirectory(_addDirController.text);
@@ -91,12 +91,12 @@ class FilexController {
 }
 
 class _FilexBloc {
-  _FilexBloc({@required this.path, @required this.itemController});
+  _FilexBloc({required this.path, required this.itemController});
 
   final String path;
   final StreamController<List<DirectoryItem>> itemController;
-  bool showOnlyDirectories;
-  bool showHiddenFiles;
+  late bool showOnlyDirectories;
+  late bool showHiddenFiles;
 
   Future<void> deleteItem(DirectoryItem item) async {
     try {
