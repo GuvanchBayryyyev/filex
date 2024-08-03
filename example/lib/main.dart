@@ -4,13 +4,13 @@ import 'dart:io';
 import 'package:filex/filex.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission/permission.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class _FileExplorerState extends State<FileExplorer> {
   var _ready = false;
-  FilexController controller;
+  late FilexController controller;
 
-  String _dirPath;
+  String? _dirPath;
   final _onReady = Completer<void>();
 
   Future<void> getDir() async {
@@ -18,11 +18,11 @@ class _FileExplorerState extends State<FileExplorer> {
     final dir = await getExternalStorageDirectory();
     switch (Platform.isAndroid) {
       case true:
-        _dirPath = dir.path
+        _dirPath = dir?.path
             .replaceFirst("Android/data/com.example.filex_example/files", "");
         break;
       default:
-        _dirPath = dir.path;
+        _dirPath = dir?.path;
     }
 
     print("Storage dir: $_dirPath");
@@ -33,11 +33,10 @@ class _FileExplorerState extends State<FileExplorer> {
   void initState() {
     getDir();
     super.initState();
-    Permission.requestPermissions([PermissionName.Storage])
-        .then((_) => _onReady.future.then((_) {
-              controller = FilexController(path: _dirPath);
-              setState(() => _ready = true);
-            }));
+    Permission.storage.request().then((_) => _onReady.future.then((_) {
+          controller = FilexController(path: _dirPath ?? '');
+          setState(() => _ready = true);
+        }));
   }
 
   @override
@@ -48,7 +47,7 @@ class _FileExplorerState extends State<FileExplorer> {
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () => controller.addDirectory(context),
+            onPressed: () => controller?.addDirectory(context),
           )
         ],
       ),

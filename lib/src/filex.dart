@@ -7,20 +7,21 @@ import 'package:pedantic/pedantic.dart';
 
 import 'bloc.dart';
 import 'models/actions.dart';
-import "models/filesystem.dart";
+import 'models/filesystem.dart';
 
 class _FilexState extends State<Filex> {
-  _FilexState(
-      {@required this.controller,
-      this.showHiddenFiles,
-      this.showOnlyDirectories,
-      this.fileTrailingBuilder,
-      this.directoryTrailingBuilder,
-      this.fileLeadingBuilder,
-      this.directoryLeadingBuilder,
-      this.compact,
-      this.actions,
-      this.extraActions}) {
+  _FilexState({
+    required this.controller,
+    this.showHiddenFiles = false,
+    this.showOnlyDirectories = false,
+    this.fileTrailingBuilder,
+    this.directoryTrailingBuilder,
+    this.fileLeadingBuilder,
+    this.directoryLeadingBuilder,
+    this.compact = false,
+    this.actions = const [],
+    this.extraActions = const [],
+  }) {
     _initialDirectory = controller.directory;
     controller
       ..showOnlyDirectories = showOnlyDirectories
@@ -30,19 +31,19 @@ class _FilexState extends State<Filex> {
 
   final bool showHiddenFiles;
   final bool showOnlyDirectories;
-  final FilexActionBuilder fileLeadingBuilder;
-  final FilexActionBuilder fileTrailingBuilder;
-  final FilexActionBuilder directoryTrailingBuilder;
-  final FilexActionBuilder directoryLeadingBuilder;
+  final FilexActionBuilder? fileLeadingBuilder;
+  final FilexActionBuilder? fileTrailingBuilder;
+  final FilexActionBuilder? directoryTrailingBuilder;
+  final FilexActionBuilder? directoryLeadingBuilder;
   final bool compact;
   final List<PredefinedAction> actions;
   final List<FilexSlidableAction> extraActions;
   final FilexController controller;
 
-  SlidableController _slidableController;
+  SlidableController? _slidableController;
   final ScrollController _scrollController = ScrollController();
   bool _isBuilt = false;
-  Directory _initialDirectory;
+  late Directory _initialDirectory;
 
   @override
   Widget build(BuildContext context) {
@@ -57,21 +58,19 @@ class _FilexState extends State<Filex> {
           final builder = ListView.builder(
               controller: _scrollController,
               shrinkWrap: true,
-              itemCount: snapshot.data.length,
+              itemCount: snapshot.data!.length,
               itemBuilder: (BuildContext context, int index) {
-                final item = snapshot.data[index];
+                final item = snapshot.data![index];
                 Widget w;
                 if (actions.isNotEmpty) {
                   w = Slidable(
                     key: Key(item.filename),
                     controller: _slidableController,
                     direction: Axis.horizontal,
-                    actionPane: const SlidableDrawerActionPane(),
-                    actionExtentRatio: 0.25,
                     child: compact
                         ? _buildCompactVerticalListItem(context, item)
                         : _buildVerticalListItem(context, item),
-                    actions: _getSlideIconActions(context, item),
+                    // actions: _getSlideIconActions(context, item),
                   );
                 } else {
                   if (compact) {
@@ -85,10 +84,10 @@ class _FilexState extends State<Filex> {
           if (controller.directory.path != _initialDirectory.path) {
             _isBuilt = true;
             return Column(
-                children: <Widget>[
-                  _topNavigation(),
-                  Expanded(child: builder)
-                ]
+              children: <Widget>[
+                _topNavigation(),
+                Expanded(child: builder),
+              ],
             );
           } else {
             _isBuilt = true;
@@ -96,10 +95,12 @@ class _FilexState extends State<Filex> {
           }
         } else {
           return Center(
-              child: Padding(
-                  padding: EdgeInsets.only(
-                      top: MediaQuery.of(context).size.height / 0.8),
-                  child: const CircularProgressIndicator()));
+            child: Padding(
+              padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).size.height / 0.8),
+              child: const CircularProgressIndicator(),
+            ),
+          );
         }
       },
     );
@@ -132,21 +133,25 @@ class _FilexState extends State<Filex> {
   Widget _buildCompactVerticalListItem(
       BuildContext context, DirectoryItem item) {
     return Padding(
-        padding: const EdgeInsets.all(3.0),
-        child: Row(children: <Widget>[
+      padding: const EdgeInsets.all(3.0),
+      child: Row(
+        children: <Widget>[
           _buildLeading(context, item),
           Expanded(
-              child: GestureDetector(
-            child: Text(" ${item.filename}", overflow: TextOverflow.clip),
-            onTap: () => _onTapDirectory(item),
-          )),
-          _buildTrailing(context, item)
-        ]));
+            child: GestureDetector(
+              child: Text(" ${item.filename}", overflow: TextOverflow.clip),
+              onTap: () => _onTapDirectory(item),
+            ),
+          ),
+          _buildTrailing(context, item),
+        ],
+      ),
+    );
   }
 
   void _onTapDirectory(DirectoryItem item) {
     if (item.isDirectory) {
-      final p = controller.directory.path + "/" + item.filename;
+      final p = '${controller.directory.path}/${item.filename}';
       controller
         ..directory = Directory(p)
         ..ls();
@@ -158,16 +163,12 @@ class _FilexState extends State<Filex> {
   Widget _buildLeading(BuildContext context, DirectoryItem item) {
     Widget w = item.icon;
     if (item.isDirectory) {
-      switch (directoryLeadingBuilder != null) {
-        case true:
-          w = directoryLeadingBuilder(context, item);
+      if (directoryLeadingBuilder != null) {
+        w = directoryLeadingBuilder!(context, item);
       }
     } else {
-      switch (fileLeadingBuilder != null) {
-        case true:
-          w = fileLeadingBuilder(context, item);
-          break;
-        default:
+      if (fileLeadingBuilder != null) {
+        w = fileLeadingBuilder!(context, item);
       }
     }
     return w;
@@ -175,20 +176,18 @@ class _FilexState extends State<Filex> {
 
   Widget _buildTrailing(BuildContext context, DirectoryItem item) {
     Widget w;
-    switch (item.isDirectory) {
-      case true:
-        if (directoryTrailingBuilder != null) {
-          w = directoryTrailingBuilder(context, item);
-        } else {
-          w = const Text("");
-        }
-        break;
-      default:
-        if (fileTrailingBuilder != null) {
-          w = fileTrailingBuilder(context, item);
-        } else {
-          w = Text("${item.filesize}");
-        }
+    if (item.isDirectory) {
+      if (directoryTrailingBuilder != null) {
+        w = directoryTrailingBuilder!(context, item);
+      } else {
+        w = const Text("");
+      }
+    } else {
+      if (fileTrailingBuilder != null) {
+        w = fileTrailingBuilder!(context, item);
+      } else {
+        w = Text("${item.filesize}");
+      }
     }
     return w;
   }
@@ -196,20 +195,21 @@ class _FilexState extends State<Filex> {
   List<Widget> _getSlideIconActions(BuildContext context, DirectoryItem item) {
     final ic = <Widget>[];
     if (actions.contains(PredefinedAction.delete)) {
-      ic.add(IconSlideAction(
-        caption: 'Delete',
-        color: Colors.red,
+      ic.add(SlidableAction(
+        label: 'Delete',
+        backgroundColor: Colors.red,
         icon: Icons.delete,
-        onTap: () => _confirmDeleteDialog(context, item),
+        onPressed: (BuildContext context) =>
+            _confirmDeleteDialog(context, item),
       ));
     }
     if (extraActions.isNotEmpty) {
       for (final action in extraActions) {
-        ic.add(IconSlideAction(
-          caption: action.name,
-          color: action.color,
+        ic.add(SlidableAction(
+          label: action.name,
+          backgroundColor: action.color,
           icon: action.iconData,
-          onTap: () => action.onTap(context, item),
+          onPressed: (BuildContext context) => action.onTap(context, item),
         ));
       }
     }
@@ -223,15 +223,17 @@ class _FilexState extends State<Filex> {
         return AlertDialog(
           title: Text("Delete ${item.filename}?"),
           actions: <Widget>[
-            FlatButton(
+            TextButton(
               child: const Text("Cancel"),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
-            FlatButton(
+            TextButton(
               child: const Text("Delete"),
-              color: Colors.red,
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
               onPressed: () {
                 controller.delete(item).then((_) {
                   Navigator.of(context).pop();
@@ -245,8 +247,11 @@ class _FilexState extends State<Filex> {
   }
 
   void _scrollTop() {
-    _scrollController.animateTo(_scrollController.position.minScrollExtent,
-        duration: const Duration(milliseconds: 10), curve: Curves.easeIn);
+    _scrollController.animateTo(
+      _scrollController.position.minScrollExtent,
+      duration: const Duration(milliseconds: 10),
+      curve: Curves.easeIn,
+    );
   }
 
   @override
@@ -259,16 +264,17 @@ class _FilexState extends State<Filex> {
 /// The file explorer
 class Filex extends StatefulWidget {
   /// Provide a directory to start from
-  const Filex(
-      {@required this.controller,
-      this.showHiddenFiles = false,
-      this.showOnlyDirectories = false,
-      this.fileTrailingBuilder,
-      this.directoryTrailingBuilder,
-      this.directoryLeadingBuilder,
-      this.actions = const <PredefinedAction>[],
-      this.extraActions = const <FilexSlidableAction>[],
-      this.compact = false});
+  const Filex({
+    required this.controller,
+    this.showHiddenFiles = false,
+    this.showOnlyDirectories = false,
+    this.fileTrailingBuilder,
+    this.directoryTrailingBuilder,
+    this.directoryLeadingBuilder,
+    this.actions = const [],
+    this.extraActions = const [],
+    this.compact = false,
+  });
 
   /// The controller to use
   final FilexController controller;
@@ -283,13 +289,13 @@ class Filex extends StatefulWidget {
   final bool showOnlyDirectories;
 
   /// Trailing builder for files
-  final FilexActionBuilder fileTrailingBuilder;
+  final FilexActionBuilder? fileTrailingBuilder;
 
   /// Trailing builder for directory
-  final FilexActionBuilder directoryTrailingBuilder;
+  final FilexActionBuilder? directoryTrailingBuilder;
 
   /// Leading builder for directory
-  final FilexActionBuilder directoryLeadingBuilder;
+  final FilexActionBuilder? directoryLeadingBuilder;
 
   /// Extra slidable actions
   final List<FilexSlidableAction> extraActions;
@@ -299,13 +305,14 @@ class Filex extends StatefulWidget {
 
   @override
   _FilexState createState() => _FilexState(
-      controller: controller,
-      showHiddenFiles: showHiddenFiles,
-      showOnlyDirectories: showOnlyDirectories,
-      fileTrailingBuilder: fileTrailingBuilder,
-      directoryTrailingBuilder: directoryTrailingBuilder,
-      directoryLeadingBuilder: directoryLeadingBuilder,
-      actions: actions,
-      extraActions: extraActions,
-      compact: compact);
+        controller: controller,
+        showHiddenFiles: showHiddenFiles,
+        showOnlyDirectories: showOnlyDirectories,
+        fileTrailingBuilder: fileTrailingBuilder,
+        directoryTrailingBuilder: directoryTrailingBuilder,
+        directoryLeadingBuilder: directoryLeadingBuilder,
+        actions: actions,
+        extraActions: extraActions,
+        compact: compact,
+      );
 }
